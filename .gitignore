@@ -1,0 +1,20 @@
+node_modules/
+
+.env
+.env.*
+!.env.example
+
+# Firebase service account credentials
+admin-firebase-service-account.json
+firebase-service-account.json
+*-firebase-service-account.json
+service-account.json
+firebase-adminsdk-*.json
+
+# Logs
+*.log
+logs/
+
+# Uploads
+uploads/*
+!uploads/.gitkeep

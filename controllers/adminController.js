@@ -83,6 +83,9 @@ const getMailTransporter = () => {
     port,
     secure,
     requireTLS: true,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
     tls: {
       rejectUnauthorized: false,
     },
@@ -247,8 +250,17 @@ const sendAdminResetCode = async (request, response) => {
     await admin.save();
     return response.json({message: 'OTP sent to the admin email'});
   } catch (error) {
-    console.error('Admin reset code email error:', error.message);
-    return response.status(500).json({message: 'Unable to send OTP to the admin email'});
+    console.error('Admin reset code email error:', {
+      code: error.code,
+      responseCode: error.responseCode,
+      command: error.command,
+      message: error.message,
+      smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
+      smtpPort: Number(process.env.SMTP_PORT || 587),
+      smtpUserConfigured: Boolean(process.env.SMTP_USER || process.env.ADMIN_EMAIL),
+      smtpPasswordConfigured: Boolean(process.env.SMTP_PASSWORD || process.env.SMTP_PASS || process.env.ADMIN_PASSWORD),
+    });
+    return response.status(503).json({message: 'Email service is unavailable. Please check the server SMTP configuration.'});
   }
 };
 

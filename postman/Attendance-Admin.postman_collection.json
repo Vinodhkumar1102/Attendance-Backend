@@ -6,7 +6,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5000"
+      "value": "https://attendance-backend-11.onrender.com"
     },
     {
       "key": "adminToken",
@@ -26,7 +26,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"123456\"\n}"
+          "raw": "{\n  \"email\": \"datavibes80@gmail.com\",\n  \"password\": \"123456\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/admin/login",
@@ -57,6 +57,69 @@
           "raw": "{{baseUrl}}/api",
           "host": ["{{baseUrl}}"],
           "path": ["api"]
+        }
+      }
+    },
+    {
+      "name": "Admin Forgot Password - Send OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"datavibes80@gmail.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/forgot-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "forgot-password"]
+        }
+      }
+    },
+    {
+      "name": "Admin Forgot Password - Verify OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"datavibes80@gmail.com\",\n  \"resetCode\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/verify-reset-code",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "verify-reset-code"]
+        }
+      }
+    },
+    {
+      "name": "Admin Forgot Password - Reset Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"datavibes80@gmail.com\",\n  \"resetCode\": \"123456\",\n  \"newPassword\": \"654321\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/reset-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "reset-password"]
         }
       }
     }

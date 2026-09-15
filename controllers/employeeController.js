@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const path = require('path');
 const firebaseAdmin = require('../config/firebase');
 const Counter = require('../models/Counter');
@@ -385,23 +385,35 @@ const lookupEmployeeEmail = async (request, response) => {
   }
 };
 
-const getMailTransporter = () => {
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+const sendResetEmail = async (email, resetCode) => {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
 
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port,
-    secure,
-    requireTLS: true,
-    tls: {
-      rejectUnauthorized: false,
-    },
-    auth: {
-      user: process.env.SMTP_USER || process.env.ADMIN_EMAIL,
-      pass: (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || process.env.ADMIN_PASSWORD || '').replace(/\s+/g, ''),
-    },
+  if (!process.env.EMAIL_FROM) {
+    throw new Error('EMAIL_FROM is not configured');
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const {data, error} = await resend.emails.send({
+    from: process.env.EMAIL_FROM,
+    to: [email],
+    subject: 'Your VibeWork password reset code',
+    text: `Your password reset code is ${resetCode}. It expires in 1 minute.`,
   });
+
+  if (error) {
+    console.error('Employee Resend email error:', error);
+    throw new Error(error.message || 'Unable to send email');
+  }
+
+  console.log('Employee reset code email sent successfully', {
+    email,
+    emailId: data?.id,
+  });
+
+  return data;
 };
 
 const sendEmployeeResetCode = async (request, response) => {
@@ -416,27 +428,19 @@ const sendEmployeeResetCode = async (request, response) => {
       return response.status(404).json({message: 'This email is not registered for an employee'});
     }
 
-    const mailUser = process.env.SMTP_USER || process.env.ADMIN_EMAIL;
-    const mailPassword = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || process.env.ADMIN_PASSWORD || '').replace(/\s+/g, '');
-    if (!mailUser || !mailPassword) {
-      return response.status(503).json({message: 'Email service is not configured'});
-    }
-
     const resetCode = String(crypto.randomInt(100000, 1000000));
-    await getMailTransporter().sendMail({
-      from: process.env.SMTP_FROM || mailUser,
-      to: employee.email,
-      subject: 'Your VibeWork password reset code',
-      text: `Your password reset code is ${resetCode}. It expires in 1 minute.`,
-    });
+    await sendResetEmail(employee.email, resetCode);
 
     employee.resetCode = resetCode;
     employee.resetCodeExpiresAt = new Date(Date.now() + 60 * 1000);
     await employee.save();
     return response.json({message: 'A reset code was sent to your registered email'});
   } catch (error) {
-    console.error('Employee reset code email error:', error.message);
-    return response.status(500).json({message: 'Unable to send reset code to this email'});
+    console.error('Employee reset code email error:', {
+      message: error.message,
+      code: error.code,
+    });
+    return response.status(503).json({message: 'Email service is unavailable. Please check the Resend configuration.'});
   }
 };
 
